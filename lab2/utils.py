@@ -1,16 +1,12 @@
 import json
 
-import json
-
 import numpy as np
 
 
-def read_epsilon(filename):
-    """Прочитать положительную конечную точность из JSON-файла."""
+def read_json(filename):
+    """Прочитать конфигурацию из JSON-файла."""
     with open(filename, encoding="utf-8") as file:
-        data = json.load(file)
-    epsilon = float(data["epsilon"])
-    return epsilon
+        return json.load(file)
 
 
 def setup_output(precision=6):

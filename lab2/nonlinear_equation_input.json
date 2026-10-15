@@ -1,0 +1,15 @@
+{
+  "epsilon": 0.00000001,
+  "max_iterations": 10000,
+  "interval": [0.5, 1.0],
+  "initial_guess": 1.0,
+  "zero_tolerance": 1e-12,
+  "output_precision": 10,
+  "plot": {
+    "x_range": [0.0, 1.2],
+    "points": 400,
+    "dpi": 150,
+    "function_file": "nonlinear_equation.png",
+    "error_file": "nonlinear_equation_errors.png"
+  }
+}

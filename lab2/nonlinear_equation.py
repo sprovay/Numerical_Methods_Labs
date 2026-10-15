@@ -2,17 +2,10 @@
 
 import numpy as np
 
-from utils import read_epsilon, setup_output, show
+from utils import read_json, setup_output, show
 
 
-INPUT_FILE = "input.json"
-MAX_ITERATIONS = 10000
-LEFT_BOUND = 0.5
-RIGHT_BOUND = 1.0
-INITIAL_GUESS = 1.0
-ZERO_TOLERANCE = 1e-12
-PLOT_FILE = "nonlinear_equation.png"
-ERROR_PLOT_FILE = "nonlinear_equation_errors.png"
+INPUT_FILE = "nonlinear_equation_input.json"
 
 
 def function(x):
@@ -53,13 +46,13 @@ def simple_iterations(initial, epsilon, max_iterations, contraction):
     raise ValueError("метод простой итерации не сошёлся")
 
 
-def newton_method(initial, epsilon, max_iterations):
+def newton_method(initial, epsilon, max_iterations, zero_tolerance):
     """Найти корень методом Ньютона."""
     x = initial
     history = []
     for iteration in range(1, max_iterations + 1):
         derivative_value = derivative(x)
-        if abs(derivative_value) <= ZERO_TOLERANCE:
+        if abs(derivative_value) <= zero_tolerance:
             raise ValueError("производная метода Ньютона близка к нулю")
 
         next_x = x - function(x) / derivative_value
@@ -80,18 +73,19 @@ def compare_methods(simple_count, newton_count):
     return "Метод Ньютона потребовал меньше итераций."
 
 
-def create_plot(filename):
+def create_plot(initial, bounds, plot_config):
     """Построить график функции для выбора начального приближения."""
     import matplotlib.pyplot as plt
 
-    x_values = np.linspace(0, 1.2, 400)
+    left_bound, right_bound = bounds
+    x_values = np.linspace(*plot_config["x_range"], plot_config["points"])
     plt.figure(figsize=(8, 5))
     plt.plot(x_values, function(x_values), label="f(x) = x³ + x² - x - 0.5")
     plt.axhline(0, color="black", linewidth=0.8)
-    plt.axvline(INITIAL_GUESS, color="gray", linestyle="--", label="x₀ = 1")
+    plt.axvline(initial, color="gray", linestyle="--", label=f"x₀ = {initial:g}")
     plt.scatter(
-        [LEFT_BOUND, RIGHT_BOUND],
-        [function(LEFT_BOUND), function(RIGHT_BOUND)],
+        [left_bound, right_bound],
+        [function(left_bound), function(right_bound)],
         color="red",
         zorder=3,
         label="границы отрезка",
@@ -101,11 +95,11 @@ def create_plot(filename):
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(filename, dpi=150)
+    plt.savefig(plot_config["function_file"], dpi=plot_config["dpi"])
     plt.close()
 
 
-def create_error_plot(simple_history, newton_history, epsilon, filename):
+def create_error_plot(simple_history, newton_history, epsilon, plot_config):
     """Построить график зависимости погрешности от номера итерации."""
     import matplotlib.pyplot as plt
 
@@ -135,41 +129,54 @@ def create_error_plot(simple_history, newton_history, epsilon, filename):
     plt.grid(True, which="both", linestyle="--", alpha=0.7)
     plt.legend()
     plt.tight_layout()
-    plt.savefig(filename, dpi=150)
+    plt.savefig(plot_config["error_file"], dpi=plot_config["dpi"])
     plt.close()
 
 
 def main():
     try:
-        epsilon = read_epsilon(INPUT_FILE)
+        config = read_json(INPUT_FILE)
+        epsilon = float(config["epsilon"])
+        max_iterations = int(config["max_iterations"])
+        left_bound, right_bound = map(float, config["interval"])
+        initial_guess = float(config["initial_guess"])
+        zero_tolerance = float(config["zero_tolerance"])
+        plot_config = config["plot"]
+
+        if epsilon <= 0 or max_iterations <= 0 or zero_tolerance <= 0:
+            raise ValueError("точности и число итераций должны быть положительными")
+        if left_bound >= right_bound:
+            raise ValueError("левая граница должна быть меньше правой")
+
         contraction = max(
-            abs(iteration_derivative(LEFT_BOUND)),
-            abs(iteration_derivative(RIGHT_BOUND)),
+            abs(iteration_derivative(left_bound)),
+            abs(iteration_derivative(right_bound)),
         )
         simple_root, simple_count, simple_history = simple_iterations(
-            INITIAL_GUESS,
+            initial_guess,
             epsilon,
-            MAX_ITERATIONS,
+            max_iterations,
             contraction,
         )
         newton_root, newton_count, newton_history = newton_method(
-            INITIAL_GUESS,
+            initial_guess,
             epsilon,
-            MAX_ITERATIONS,
+            max_iterations,
+            zero_tolerance,
         )
-        create_plot(PLOT_FILE)
+        create_plot(initial_guess, (left_bound, right_bound), plot_config)
         create_error_plot(
             simple_history,
             newton_history,
             epsilon,
-            ERROR_PLOT_FILE,
+            plot_config,
         )
 
-        setup_output(precision=10)
+        setup_output(precision=int(config["output_precision"]))
         print("Уравнение: x³ + x² - x - 0.5 = 0")
         print(f"Заданная точность ε: {epsilon:g}")
-        print(f"Отрезок локализации корня: [{LEFT_BOUND:g}, {RIGHT_BOUND:g}]")
-        print(f"Начальное приближение x₀: {INITIAL_GUESS:g}")
+        print(f"Отрезок локализации корня: [{left_bound:g}, {right_bound:g}]")
+        print(f"Начальное приближение x₀: {initial_guess:g}")
         print(f"Коэффициент сжатия q: {contraction:.6g}")
         show("Корень методом простой итерации", simple_root)
         show("Невязка метода простой итерации", abs(function(simple_root)))
@@ -178,9 +185,9 @@ def main():
         show("Невязка метода Ньютона", abs(function(newton_root)))
         print(f"Количество итераций: {newton_count}")
         show("Сравнение скорости сходимости", compare_methods(simple_count, newton_count))
-        print(f"\nГрафик функции сохранён в файл {PLOT_FILE}")
-        print(f"График погрешности сохранён в файл {ERROR_PLOT_FILE}")
-    except (OSError, ValueError) as error:
+        print(f"\nГрафик функции сохранён в файл {plot_config['function_file']}")
+        print(f"График погрешности сохранён в файл {plot_config['error_file']}")
+    except (KeyError, OSError, TypeError, ValueError) as error:
         print(f"Ошибка: {error}")
 
 
