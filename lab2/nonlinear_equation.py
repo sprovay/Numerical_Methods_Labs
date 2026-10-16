@@ -83,12 +83,18 @@ def create_plot(initial, bounds, plot_config):
     plt.plot(x_values, function(x_values), label="f(x) = x³ + x² - x - 0.5")
     plt.axhline(0, color="black", linewidth=0.8)
     plt.axvline(initial, color="gray", linestyle="--", label=f"x₀ = {initial:g}")
+    plt.axvline(
+        left_bound,
+        color="red",
+        linestyle="--",
+        label="границы отрезка",
+    )
+    plt.axvline(right_bound, color="red", linestyle="--")
     plt.scatter(
         [left_bound, right_bound],
         [function(left_bound), function(right_bound)],
         color="red",
         zorder=3,
-        label="границы отрезка",
     )
     plt.xlabel("x")
     plt.ylabel("f(x)")
@@ -99,8 +105,13 @@ def create_plot(initial, bounds, plot_config):
     plt.close()
 
 
-def create_error_plot(simple_history, newton_history, epsilon, plot_config):
-    """Построить график зависимости погрешности от номера итерации."""
+def create_error_plot(
+    simple_history,
+    newton_history,
+    reference_root,
+    plot_config,
+):
+    """Построить график ошибки относительно эталонного корня."""
     import matplotlib.pyplot as plt
 
     plt.figure(figsize=(8, 5))
@@ -109,17 +120,11 @@ def create_error_plot(simple_history, newton_history, epsilon, plot_config):
         (newton_history, "Метод Ньютона"),
     ):
         iterations = [item[0] for item in history]
-        errors = [item[2] for item in history]
+        errors = [abs(item[1] - reference_root) for item in history]
         plt.semilogy(iterations, errors, marker="o", label=label)
 
-    plt.axhline(
-        epsilon,
-        color="red",
-        linestyle="--",
-        label=f"ε = {epsilon:g}",
-    )
     plt.xlabel("Номер итерации k")
-    plt.ylabel("Оценка погрешности")
+    plt.ylabel("Погрешность приближения")
     iterations = {
         item[0]
         for history in (simple_history, newton_history)
@@ -137,6 +142,7 @@ def main():
     try:
         config = read_json(INPUT_FILE)
         epsilon = float(config["epsilon"])
+        reference_epsilon = np.longdouble(epsilon) ** 2
         max_iterations = int(config["max_iterations"])
         left_bound, right_bound = map(float, config["interval"])
         initial_guess = float(config["initial_guess"])
@@ -164,11 +170,17 @@ def main():
             max_iterations,
             zero_tolerance,
         )
+        reference_root, _, _ = newton_method(
+            np.longdouble(initial_guess),
+            reference_epsilon,
+            max_iterations,
+            np.longdouble(zero_tolerance),
+        )
         create_plot(initial_guess, (left_bound, right_bound), plot_config)
         create_error_plot(
             simple_history,
             newton_history,
-            epsilon,
+            reference_root,
             plot_config,
         )
 

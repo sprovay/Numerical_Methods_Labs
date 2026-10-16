@@ -37,7 +37,7 @@ def jacobian(values):
         raise ValueError("аргумент логарифма должен быть положительным")
     return np.array([
         [1, np.sin(x2)],
-        [-1 / ((x1 + 1) * np.log(10)), 1],
+        [-1 / ((x1 + 1) * np.log(np.longdouble(10))), 1],
     ])
 
 
@@ -109,7 +109,14 @@ def compare_methods(simple_count, newton_count):
     return "Метод Ньютона оказался быстрее."
 
 
-def create_plot(solution, initial, parameter, plot_config):
+def create_plot(
+    solution,
+    initial,
+    parameter,
+    x1_bounds,
+    x2_bounds,
+    plot_config,
+):
     """Построить графики уравнений системы."""
     import matplotlib.pyplot as plt
 
@@ -121,6 +128,15 @@ def create_plot(solution, initial, parameter, plot_config):
     plt.figure(figsize=(8, 5))
     plt.plot(first_x1, x2_values, label="x₁ = 1 + cos(x₂)")
     plt.plot(x1_values, second_x2, label="x₂ = 1 + lg(x₁ + 1)")
+    plt.axvline(
+        x1_bounds[0],
+        color="gray",
+        linestyle="--",
+        label="границы области D",
+    )
+    plt.axvline(x1_bounds[1], color="gray", linestyle="--")
+    plt.axhline(x2_bounds[0], color="gray", linestyle="--")
+    plt.axhline(x2_bounds[1], color="gray", linestyle="--")
     plt.scatter(
         *initial,
         color="orange",
@@ -137,8 +153,13 @@ def create_plot(solution, initial, parameter, plot_config):
     plt.close()
 
 
-def create_error_plot(simple_history, newton_history, epsilon, plot_config):
-    """Построить график зависимости погрешности от номера итерации."""
+def create_error_plot(
+    simple_history,
+    newton_history,
+    reference_solution,
+    plot_config,
+):
+    """Построить график ошибки относительно эталонного решения."""
     import matplotlib.pyplot as plt
 
     plt.figure(figsize=(8, 5))
@@ -147,17 +168,14 @@ def create_error_plot(simple_history, newton_history, epsilon, plot_config):
         (newton_history, "Метод Ньютона"),
     ):
         iterations = [item[0] for item in history]
-        errors = [item[2] for item in history]
+        errors = [
+            np.max(np.abs(item[1] - reference_solution))
+            for item in history
+        ]
         plt.semilogy(iterations, errors, marker="o", label=label)
 
-    plt.axhline(
-        epsilon,
-        color="red",
-        linestyle="--",
-        label=f"ε = {epsilon:g}",
-    )
     plt.xlabel("Номер итерации k")
-    plt.ylabel("Оценка погрешности")
+    plt.ylabel("Погрешность приближения")
     iterations = {
         item[0]
         for history in (simple_history, newton_history)
@@ -175,6 +193,7 @@ def main():
     try:
         config = read_json(INPUT_FILE)
         epsilon = float(config["epsilon"])
+        reference_epsilon = np.longdouble(epsilon) ** 2
         max_iterations = int(config["max_iterations"])
         parameter = float(config["a_parameter"])
         initial_guess = np.array(config["initial_guess"], dtype=float)
@@ -205,11 +224,25 @@ def main():
             parameter,
             zero_tolerance,
         )
-        create_plot(newton_solution, initial_guess, parameter, plot_config)
+        reference_solution, _, _ = newton_method(
+            initial_guess.astype(np.longdouble),
+            reference_epsilon,
+            max_iterations,
+            np.longdouble(parameter),
+            np.longdouble(zero_tolerance),
+        )
+        create_plot(
+            newton_solution,
+            initial_guess,
+            parameter,
+            x1_bounds,
+            x2_bounds,
+            plot_config,
+        )
         create_error_plot(
             simple_history,
             newton_history,
-            epsilon,
+            reference_solution,
             plot_config,
         )
 
