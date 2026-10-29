@@ -1,0 +1,16 @@
+{
+  "x_star_pi_fraction": [1, 3],
+  "output_precision": 12,
+  "cases": [
+    {
+      "name": "а",
+      "nodes_pi_fractions": [[1, 8], [2, 8], [3, 8], [4, 8]],
+      "plot_file": "interpolation_a.png"
+    },
+    {
+      "name": "б",
+      "nodes_pi_fractions": [[1, 8], [5, 16], [3, 8], [1, 2]],
+      "plot_file": "interpolation_b.png"
+    }
+  ]
+}

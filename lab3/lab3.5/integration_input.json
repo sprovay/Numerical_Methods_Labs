@@ -1,0 +1,6 @@
+{
+  "interval": [-2.0, 2.0],
+  "h1": 1.0,
+  "h2": 0.5,
+  "output_precision": 12
+}
