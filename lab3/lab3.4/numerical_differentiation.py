@@ -62,7 +62,6 @@ def main():
     for i, (node, value) in enumerate(zip(nodes, values)):
         print(f"  i = {i}: x_i = {node:.{precision}g}, y_i = {value:.{precision}g}")
     print(f"\nТочка вычисления: x* = {x_star:.{precision}g}")
-    print("Метод: производные квадратичного интерполянта по трём ближайшим узлам.")
     print("Использованные узлы:")
     for i in selected:
         print(f"  i = {i}: x_i = {nodes[i]:.{precision}g}, y_i = {values[i]:.{precision}g}")
