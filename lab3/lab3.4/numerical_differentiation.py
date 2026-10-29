@@ -39,7 +39,6 @@ def select_stencil(nodes, x_star):
 
 
 def quadratic_derivatives(nodes, values, x_star):
-    """Производные квадратичного интерполянта Ньютона в точке x*."""
     x0, x1, x2 = nodes
     y0, y1, y2 = values
     first_difference = (y1 - y0) / (x1 - x0)
