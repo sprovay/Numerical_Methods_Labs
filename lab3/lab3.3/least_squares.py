@@ -1,6 +1,7 @@
 """Метод наименьших квадратов."""
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -9,6 +10,9 @@ import numpy as np
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_FILE = BASE_DIR / "least_squares_input.json"
 DEGREES = (1, 2, 3)
+sys.path.insert(0, str(BASE_DIR.parents[1] / "lab1"))
+
+from lu_method import lu_decomposition, solve_lu
 
 
 def read_data(filename):
@@ -31,11 +35,12 @@ def read_data(filename):
 
 
 def fit_least_squares(nodes, values, degree):
-    """Решить нормальную систему МНК и вернуть коэффициенты от x⁰ до x^degree."""
+    """Решить нормальную систему МНК через LU-разложение."""
     design = np.vander(nodes, N=degree + 1, increasing=True)
     normal_matrix = design.T @ design
     normal_right = design.T @ values
-    return np.linalg.solve(normal_matrix, normal_right)
+    p, l, u, _ = lu_decomposition(normal_matrix)
+    return solve_lu(p, l, u, normal_right)
 
 
 def polynomial_value(coefficients, x):

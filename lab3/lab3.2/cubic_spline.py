@@ -1,6 +1,7 @@
 """Кубический сплайн."""
 
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -8,6 +9,9 @@ import numpy as np
 
 BASE_DIR = Path(__file__).resolve().parent
 INPUT_FILE = BASE_DIR / "spline_input.json"
+sys.path.insert(0, str(BASE_DIR.parents[1] / "lab1"))
+
+from sweep_method import sweep_method
 
 
 def read_data(filename):
@@ -32,30 +36,8 @@ def read_data(filename):
     return config, nodes, values, x_star, precision
 
 
-def solve_tridiagonal(off_diagonal, diagonal, right_side):
-    """Решить симметричную трёхдиагональную систему методом прогонки."""
-    diagonal = diagonal.copy()
-    right_side = right_side.copy()
-    for i in range(1, len(diagonal)):
-        multiplier = off_diagonal[i - 1] / diagonal[i - 1]
-        diagonal[i] -= multiplier * off_diagonal[i - 1]
-        right_side[i] -= multiplier * right_side[i - 1]
-
-    solution = np.empty_like(right_side)
-    solution[-1] = right_side[-1] / diagonal[-1]
-    for i in range(len(diagonal) - 2, -1, -1):
-        solution[i] = (
-            right_side[i] - off_diagonal[i] * solution[i + 1]
-        ) / diagonal[i]
-    return solution
-
-
 def natural_cubic_spline(nodes, values):
-    """Вернуть [a_i, b_i, c_i, d_i] и вторые производные в узлах.
-
-    На участке i используется S_i(x) = a_i + b_i t + c_i t² + d_i t³,
-    где t = x - x_i. Граничные условия: S''(x_0) = S''(x_n) = 0.
-    """
+    """Вернуть [a_i, b_i, c_i, d_i] и вторые производные в узлах."""
     steps = np.diff(nodes)
     slopes = np.diff(values) / steps
     second_derivatives = np.zeros(len(nodes))
@@ -64,8 +46,8 @@ def natural_cubic_spline(nodes, values):
         diagonal = 2 * (steps[:-1] + steps[1:])
         off_diagonal = steps[1:-1]
         right_side = 6 * (slopes[1:] - slopes[:-1])
-        second_derivatives[1:-1] = solve_tridiagonal(
-            off_diagonal, diagonal, right_side
+        second_derivatives[1:-1], _, _ = sweep_method(
+            off_diagonal, diagonal, off_diagonal, right_side
         )
 
     a = values[:-1].copy()
@@ -78,7 +60,7 @@ def natural_cubic_spline(nodes, values):
 
 
 def interval_index(nodes, x):
-    """Найти участок; правый крайний узел относится к последнему участку."""
+    """Найти участок."""
     argument = np.asarray(x, dtype=float)
     if np.any((argument < nodes[0]) | (argument > nodes[-1])):
         raise ValueError("точка находится вне области сплайна")
