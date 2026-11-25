@@ -1,0 +1,8 @@
+{
+  "interval": [1.0, 2.0],
+  "h": 0.1,
+  "refinement_factor": 2,
+  "output_precision": 10,
+  "solution_plot": "ivp_solution.png",
+  "error_plot": "ivp_errors.png"
+}
