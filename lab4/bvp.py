@@ -181,7 +181,6 @@ def main():
         print(f"Макс. |ошибка| при h: {np.max(np.abs(coarse_values-exact_coarse)):.{precision}g}")
         print(f"Макс. |ошибка| при h/r: {np.max(np.abs(fine_values-exact_fine)):.{precision}g}")
         print(f"Макс. оценка Рунге–Ромберга для h/r: {np.max(rr_error):.{precision}g}")
-        print(f"Макс. |ошибка уточнения|: {np.max(np.abs(refined-exact_coarse)):.{precision}g}\n")
 
     create_plots(config, coarse, fine, results)
     print(f"Графики: {config['solution_plot']}, {config['error_plot']}")
