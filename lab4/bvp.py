@@ -46,15 +46,15 @@ def integrate_with_slope(grid, slope):
 def shooting(grid):
     """Подобрать y'(1) методом секущих; интегрировать IVP методом RK4."""
     first_slope, second_slope = 0.0, 1.0
-    first_values = integrate_with_slope(grid, first_slope)
+    first_values = integrate_with_slope(grid, first_slope) # две задачи Коши
     second_values = integrate_with_slope(grid, second_slope)
-    first_residual = first_values[-1] - RIGHT_VALUE
+    first_residual = first_values[-1] - RIGHT_VALUE # невязка
     second_residual = second_values[-1] - RIGHT_VALUE
     for _ in range(20):
         denominator = second_residual - first_residual
         if abs(denominator) < 1e-14:
             raise ValueError("метод стрельбы: невозможно обновить начальный наклон")
-        next_slope = second_slope - second_residual * (
+        next_slope = second_slope - second_residual * ( # строим прямую через 2 точки, пересечение с s дает новое значение slope
             second_slope - first_slope
         ) / denominator
         values = integrate_with_slope(grid, next_slope)
